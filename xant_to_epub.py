@@ -80,8 +80,9 @@ def create_epub():
 name = "Volume 0"
 volumes = collections.defaultdict(create_epub)
 chapters = []
-clean_uri = lambda string_in : ''.join([x for x in string_in if ord(x) < 128 or x == " "])
+clean_uri = lambda string_in: ''.join([x for x in string_in if ord(x) < 128 and x != " "])
 for link in linked:
+    link.string = re.sub(r'[\\/*?:"<>|]', "", link.string)
     if link.name in ["h2", "h3", "h4", "h5", "h6"]:
         if len(chapters) > 0:
             volumes[name].toc = chapters
@@ -99,7 +100,7 @@ for link in linked:
         if "chapter" in str(link.string).lower():
             # print(name + ": " + link.string)
             # print(link.attrs["href"])
-            chapter = epub.EpubHtml(title=link.string, file_name= clean_uri(link.string) + ".xhtml", content=page_parser(link.attrs['href']),
+            chapter = epub.EpubHtml(title=link.string, file_name=clean_uri(link.string) + ".xhtml", content=page_parser(link.attrs['href']),
                                     media_type="application/xhtml+xml")
             chapter.add_item(epub.EpubItem(uid="style_default", file_name="style/default.css", media_type="text/css", content='BODY { text-align: justify;}'))
             volumes[name].add_item(chapter)
