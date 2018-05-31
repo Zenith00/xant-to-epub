@@ -6,6 +6,8 @@ import re
 import collections
 
 url = "https://xantandminions.wordpress.com/kuma-kuma-kuma-bear/"
+url = "https://xantandminions.wordpress.com/yuusha-oshishou/"
+url = "https://xantandminions.wordpress.com/isekai-izakaya-nobu/"
 f = urllib.request.urlopen(url)
 html = f.read()
 soup = BeautifulSoup(html, 'html.parser')
@@ -18,34 +20,31 @@ entry_content = soup.find_all("div", class_="entry-content")[-1]
 linked = entry_content.find_all([re.compile("h\d"), "a"])
 for link in linked:
     if link.name == "a":
-        print(link.attrs)
+        # print(link.attrs)
         pass
     else:
         pass
 errors = collections.defaultdict(int)
 error_log = []
+def fluff(tag):
+    if tag.name == "a":
+        if "href" not in tag.attrs.keys():
+            return False
+        if "xantandminions.wordpress" not in tag.attrs["href"]:
+            return False
+    if "class" in tag.attrs.keys():
+        for class_name in tag.attrs["class"]:
+            if class_name in ["share-icon", "sd-title"]:
+                return False
+
+    return True
+
+
 def strip_fluff(raw_list):
     stripped_list = []
     for item in raw_list:
-        if re.match("h\d|a", item.name):
-            if item.name == "a":
-                if "href" not in item.attrs.keys():
-                    continue
-                if  "xantandminions.wordpress" not in item.attrs["href"]:
-                    continue
-                if "class" in item.attrs.keys():
-
-                    for class_name in item.attrs["class"]:
-                        print(class_name)
-                        if class_name in ["share-icon", "sd-title"]:
-                            print("dropping " + str(item))
-                            continue
-                if "data-shared" in item.attrs.keys():
-                    print(item)
-                    print(item.attrs)
-                    print("\n"*3)
-
-        stripped_list.append(item)
+        if fluff(item):
+            stripped_list.append(item)
     return stripped_list
 
 
