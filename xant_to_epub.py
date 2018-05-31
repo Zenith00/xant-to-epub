@@ -89,6 +89,7 @@ for link in linked:
             volumes[name].add_item(epub.EpubNav())
             volumes[name].add_item(epub.EpubNcx())
             volumes[name].spine = chapters
+            volumes[name].add_item(epub.EpubItem(uid="style_default", file_name="style/default.css", media_type="text/css", content='BODY { text-align: justify;}'))
             try:
                 epub.write_epub(name + ".epub", volumes[name])
             except:
