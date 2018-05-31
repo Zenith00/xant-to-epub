@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import urllib.request
 import re
 import collections
+import pypub
 
 url = "https://xantandminions.wordpress.com/kuma-kuma-kuma-bear/"
 url = "https://xantandminions.wordpress.com/yuusha-oshishou/"
@@ -49,11 +50,18 @@ def strip_fluff(raw_list):
 
 
 
-def strip_unneeded(list_of_candidates):
-    metadata =[]
-    volume_list = collections.defaultdict(list)
-    curr_volume = None
-    for candidate in list_of_candidates:
-        pass
 
-print("\n".join(str(x) for x in strip_fluff(linked)))
+# print("\n".join(str(x) for x in strip_fluff(linked)))
+
+url = "https://xantandminions.wordpress.com/2016/10/06/isekai-izakaya-nobu-chapter-5/"
+f = urllib.request.urlopen(url)
+html = f.read()
+soup = BeautifulSoup(html, 'html.parser')
+entry_content = soup.find_all("div", class_="entry-content")[-1]
+for tagname in entry_content.select("div.sharedaddy") + entry_content.select("div.wpcnt"):
+    tagname.decompose()
+index = entry_content.find_all(string="Index")
+for index_loc in index:
+    index_loc.parent.parent.parent.decompose()
+# print(index)
+print(entry_content.prettify())
