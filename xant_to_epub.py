@@ -64,6 +64,8 @@ def create_epub():
     return book
 
 def write_epub(epub_obj, series_name, volume_name, chapters, output_dir):
+    epub_obj.set_identifier(series_name+volume_name)
+    epub_obj.set_title(series_name + " " + volume_name)
     epub_obj.toc = chapters
     epub_obj.add_item(epub.EpubNav())
     epub_obj.add_item(epub.EpubNcx())
@@ -121,21 +123,21 @@ def epubize_link(url, output_dir):
     if len(chapters) > 0:
         write_epub(volumes[name], title, name, chapters, output_dir)
 
-epubize_link("https://xantandminions.wordpress.com/astartes-knight/", "")
-# if __name__ == "__main__":
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument('output')
-#     args = parser.parse_args()
-#     print(args)
-#     f = urllib.request.urlopen("https://xantandminions.wordpress.com/")
-#     html = f.read()
-#     soup = BeautifulSoup(html, 'html.parser')
-#     # print(soup)
-#     soup = soup.find(id="primary-menu")
-#     # print(soup)
-#     soup = soup.find(href="https://xantandminions.wordpress.com/series/", string="Series").parent
-#     links = soup.find_all("a")
-#     for link in links:
-#         if link.string not in ["Series", "Active","Slow","Dropped/Hiatus"]:
-#             print("epubizing... " + link.attrs["href"])
-#             epubize_link(link.attrs["href"], args.output)
+# epubize_link("https://xantandminions.wordpress.com/astartes-knight/", "")
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('output')
+    args = parser.parse_args()
+    print(args)
+    f = urllib.request.urlopen("https://xantandminions.wordpress.com/")
+    html = f.read()
+    soup = BeautifulSoup(html, 'html.parser')
+    # print(soup)
+    soup = soup.find(id="primary-menu")
+    # print(soup)
+    soup = soup.find(href="https://xantandminions.wordpress.com/series/", string="Series").parent
+    links = soup.find_all("a")
+    for link in links:
+        if link.string not in ["Series", "Active","Slow","Dropped/Hiatus"]:
+            print("epubizing... " + link.attrs["href"])
+            epubize_link(link.attrs["href"], args.output)
