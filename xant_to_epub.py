@@ -63,7 +63,6 @@ def create_epub():
     book.add_author('xant')
     return book
 
-
 def write_epub(epub_obj, series_name, volume_name, chapters, output_dir):
     epub_obj.toc = chapters
     epub_obj.add_item(epub.EpubNav())
@@ -75,7 +74,7 @@ def write_epub(epub_obj, series_name, volume_name, chapters, output_dir):
         epub.write_epub(f"{output_dir}[{series_name}] {volume_name}.epub", epub_obj)
     except:
         print(traceback.format_exc())
-        
+
 def epubize_link(url, output_dir):
     f = urllib.request.urlopen(url)
     html = f.read()
@@ -92,7 +91,7 @@ def epubize_link(url, output_dir):
     chapters = []
     clean_uri = lambda string_in: ''.join([x for x in string_in if ord(x) < 128 and x != " "])
     for link in linked:
-        print(link.string)
+        # print(link.string)
         try:
             link.string = re.sub(r'[\\/*?:"<>|]', "", " ".join(link.strings))
         except:
@@ -106,7 +105,7 @@ def epubize_link(url, output_dir):
             name = link.string
             chapters = []
         elif link.name == "a":
-            if "chapter" in str(link.string).lower():
+            if any(x in str(link.string).lower() for x in ["chapter", "Track"]):
                 print("Chapter Found: " + link.string)
                 # print(name + ": " + link.string)
                 # print(link.attrs["href"])
@@ -121,20 +120,21 @@ def epubize_link(url, output_dir):
             error_log.append("Unrecognized tag: " + str(link))
     write_epub(volumes[name], title, name, chapters, output_dir)
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('output')
-    args = parser.parse_args()
-    print(args)
-    f = urllib.request.urlopen("https://xantandminions.wordpress.com/")
-    html = f.read()
-    soup = BeautifulSoup(html, 'html.parser')
-    # print(soup)
-    soup = soup.find(id="primary-menu")
-    # print(soup)
-    soup = soup.find(href="https://xantandminions.wordpress.com/series/", string="Series").parent
-    links = soup.find_all("a")
-    for link in links:
-        if link.string not in ["Series", "Active","Slow","Dropped/Hiatus"]:
-            print("epubizing... " + link.attrs["href"])
-            epubize_link(link.attrs["href"], args.output)
+epubize_link("https://xantandminions.wordpress.com/the-angel-does-not-desire-the-sky/", "")
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument('output')
+#     args = parser.parse_args()
+#     print(args)
+#     f = urllib.request.urlopen("https://xantandminions.wordpress.com/")
+#     html = f.read()
+#     soup = BeautifulSoup(html, 'html.parser')
+#     # print(soup)
+#     soup = soup.find(id="primary-menu")
+#     # print(soup)
+#     soup = soup.find(href="https://xantandminions.wordpress.com/series/", string="Series").parent
+#     links = soup.find_all("a")
+#     for link in links:
+#         if link.string not in ["Series", "Active","Slow","Dropped/Hiatus"]:
+#             print("epubizing... " + link.attrs["href"])
+#             epubize_link(link.attrs["href"], args.output)
