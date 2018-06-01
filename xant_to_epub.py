@@ -92,7 +92,13 @@ def epubize_link(url, output_dir):
     chapters = []
     clean_uri = lambda string_in: ''.join([x for x in string_in if ord(x) < 128 and x != " "])
     for link in linked:
-        link.string = re.sub(r'[\\/*?:"<>|]', "", link.string)
+        print(link.string)
+        try:
+            link.string = re.sub(r'[\\/*?:"<>|]', "", " ".join(link.strings))
+        except:
+            print(link.attrs)
+            input()
+            continue
         if link.name in ["h2", "h3", "h4", "h5", "h6"]:
             print("Recognized Volume " + name)
             if len(chapters) > 0:
@@ -114,7 +120,6 @@ def epubize_link(url, output_dir):
             errors["warning"] += 1
             error_log.append("Unrecognized tag: " + str(link))
     write_epub(volumes[name], title, name, chapters, output_dir)
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
