@@ -105,7 +105,7 @@ def epubize_link(url, output_dir):
             name = link.string
             chapters = []
         elif link.name == "a":
-            if any(x in str(link.string).lower() for x in ["chapter", "Track"]):
+            if any(x in str(link.string).lower() for x in ["chapter", "track", "part", "th Story"]) or title == "Garudina":
                 print("Chapter Found: " + link.string)
                 # print(name + ": " + link.string)
                 # print(link.attrs["href"])
@@ -118,23 +118,24 @@ def epubize_link(url, output_dir):
         else:
             errors["warning"] += 1
             error_log.append("Unrecognized tag: " + str(link))
-    write_epub(volumes[name], title, name, chapters, output_dir)
+    if len(chapters) > 0:
+        write_epub(volumes[name], title, name, chapters, output_dir)
 
-epubize_link("https://xantandminions.wordpress.com/the-angel-does-not-desire-the-sky/", "")
-# if __name__ == "__main__":
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument('output')
-#     args = parser.parse_args()
-#     print(args)
-#     f = urllib.request.urlopen("https://xantandminions.wordpress.com/")
-#     html = f.read()
-#     soup = BeautifulSoup(html, 'html.parser')
-#     # print(soup)
-#     soup = soup.find(id="primary-menu")
-#     # print(soup)
-#     soup = soup.find(href="https://xantandminions.wordpress.com/series/", string="Series").parent
-#     links = soup.find_all("a")
-#     for link in links:
-#         if link.string not in ["Series", "Active","Slow","Dropped/Hiatus"]:
-#             print("epubizing... " + link.attrs["href"])
-#             epubize_link(link.attrs["href"], args.output)
+# epubize_link("https://xantandminions.wordpress.com/the-angel-does-not-desire-the-sky/", "")
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('output')
+    args = parser.parse_args()
+    print(args)
+    f = urllib.request.urlopen("https://xantandminions.wordpress.com/")
+    html = f.read()
+    soup = BeautifulSoup(html, 'html.parser')
+    # print(soup)
+    soup = soup.find(id="primary-menu")
+    # print(soup)
+    soup = soup.find(href="https://xantandminions.wordpress.com/series/", string="Series").parent
+    links = soup.find_all("a")
+    for link in links:
+        if link.string not in ["Series", "Active","Slow","Dropped/Hiatus"]:
+            print("epubizing... " + link.attrs["href"])
+            epubize_link(link.attrs["href"], args.output)
