@@ -1,24 +1,11 @@
 import traceback
-
+import argparse
 from bs4 import BeautifulSoup
 import urllib.request
 import re
 import collections
 from ebooklib import epub
 
-url = "https://xantandminions.wordpress.com/kuma-kuma-kuma-bear/"
-# url = "https://xantandminions.wordpress.com/yuusha-oshishou/"
-# url = "https://xantandminions.wordpress.com/isekai-izakaya-nobu/"
-f = urllib.request.urlopen(url)
-html = f.read()
-soup = BeautifulSoup(html, 'html.parser')
-# print(soup.prettify())
-# print("break\n"*4)
-# print(soup.select("div.entry-content"))
-entry_content = soup.find_all("div", class_="entry-content")[-1]
-# print(entry_content)
-
-linked = entry_content.find_all([re.compile("h\d"), "a"])
 errors = collections.defaultdict(int)
 error_log = []
 def fluff(tag):
@@ -67,7 +54,6 @@ def page_parser(url):
     return outputstr
 
 # print(page_parser("https://xantandminions.wordpress.com/kuma-kuma-kuma-bear/art/"))
-linked = strip_fluff(linked)
 
 def create_epub():
     book = epub.EpubBook()
@@ -77,35 +63,73 @@ def create_epub():
     book.add_author('xant')
     return book
 
-name = "Volume 0"
-volumes = collections.defaultdict(create_epub)
-chapters = []
-clean_uri = lambda string_in: ''.join([x for x in string_in if ord(x) < 128 and x != " "])
-for link in linked:
-    link.string = re.sub(r'[\\/*?:"<>|]', "", link.string)
-    if link.name in ["h2", "h3", "h4", "h5", "h6"]:
-        if len(chapters) > 0:
-            volumes[name].toc = chapters
-            volumes[name].add_item(epub.EpubNav())
-            volumes[name].add_item(epub.EpubNcx())
-            volumes[name].spine = chapters
-            volumes[name].add_item(epub.EpubItem(uid="style_default", file_name="style/default.css", media_type="text/css", content='BODY { text-align: justify;}'))
-            try:
-                epub.write_epub(name + ".epub", volumes[name])
-            except:
-                print(traceback.format_exc())
-        name = link.string
-        chapters = []
 
-    elif link.name == "a":
-        if "chapter" in str(link.string).lower():
-            # print(name + ": " + link.string)
-            # print(link.attrs["href"])
-            chapter = epub.EpubHtml(title=link.string, file_name=clean_uri(link.string) + ".xhtml", content=page_parser(link.attrs['href']),
-                                    media_type="application/xhtml+xml")
-            chapter.add_item(epub.EpubItem(uid="style_default", file_name="style/default.css", media_type="text/css", content='BODY { text-align: justify;}'))
-            volumes[name].add_item(chapter)
-            chapters.append(chapter)
-    else:
-        errors["warning"] += 1
-        error_log.append("Unrecognized tag: " + str(link))
+def write_epub(epub_obj, series_name, volume_name, chapters, output_dir):
+    epub_obj.toc = chapters
+    epub_obj.add_item(epub.EpubNav())
+    epub_obj.add_item(epub.EpubNcx())
+    epub_obj.spine = chapters
+    epub_obj.add_item(
+        epub.EpubItem(uid="style_default", file_name="style/default.css", media_type="text/css", content='BODY { text-align: justify;}'))
+    try:
+        epub.write_epub(f"{output_dir}[{series_name}] {volume_name}.epub", epub_obj)
+    except:
+        print(traceback.format_exc())
+        
+def epubize_link(url, output_dir):
+    f = urllib.request.urlopen(url)
+    html = f.read()
+    soup = BeautifulSoup(html, 'html.parser')
+    title = soup.find(class_="entry-title").string
+    print("Epubizing: " + title)
+    # print(title)
+    entry_content = soup.find_all("div", class_="entry-content")[-1]
+    # print(entry_content)
+
+    linked = strip_fluff(entry_content.find_all([re.compile("h\d"), "a"]))
+    name = "Volumeless"
+    volumes = collections.defaultdict(create_epub)
+    chapters = []
+    clean_uri = lambda string_in: ''.join([x for x in string_in if ord(x) < 128 and x != " "])
+    for link in linked:
+        link.string = re.sub(r'[\\/*?:"<>|]', "", link.string)
+        if link.name in ["h2", "h3", "h4", "h5", "h6"]:
+            print("Recognized Volume " + name)
+            if len(chapters) > 0:
+                write_epub(volumes[name], title, name, chapters, output_dir)
+            name = link.string
+            chapters = []
+        elif link.name == "a":
+            if "chapter" in str(link.string).lower():
+                print("Chapter Found: " + link.string)
+                # print(name + ": " + link.string)
+                # print(link.attrs["href"])
+                chapter = epub.EpubHtml(title=link.string, file_name=clean_uri(link.string) + ".xhtml", content=page_parser(link.attrs['href']),
+                                        media_type="application/xhtml+xml")
+                chapter.add_item(
+                    epub.EpubItem(uid="style_default", file_name="style/default.css", media_type="text/css", content='BODY { text-align: justify;}'))
+                volumes[name].add_item(chapter)
+                chapters.append(chapter)
+        else:
+            errors["warning"] += 1
+            error_log.append("Unrecognized tag: " + str(link))
+    write_epub(volumes[name], title, name, chapters, output_dir)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('output')
+    args = parser.parse_args()
+    print(args)
+    f = urllib.request.urlopen("https://xantandminions.wordpress.com/")
+    html = f.read()
+    soup = BeautifulSoup(html, 'html.parser')
+    # print(soup)
+    soup = soup.find(id="primary-menu")
+    # print(soup)
+    soup = soup.find(href="https://xantandminions.wordpress.com/series/", string="Series").parent
+    links = soup.find_all("a")
+    for link in links:
+        if link.string not in ["Series", "Active","Slow","Dropped/Hiatus"]:
+            print("epubizing... " + link.attrs["href"])
+            epubize_link(link.attrs["href"], args.output)
